@@ -80,6 +80,8 @@ export function stdFormObj(name, schema, options) {
   if (schema.enumNames) { f.titleMap = canonicalTitleMap(schema.enumNames, schema['enum']); }
   f.schema = schema;
 
+  if (schema.format) { f.format = schema.format; }
+
   // Ng model options doesn't play nice with undefined, might be defined
   // globally though
   f.ngModelOptions = f.ngModelOptions || {};
@@ -139,6 +141,17 @@ export function select(name, schema, options) {
       f.titleMap = enumToTitleMap(schema['enum']);
     }
     options.lookup[stringify(options.path)] = f;
+    return f;
+  }
+}
+
+export function geotypes(name, schema, options) {
+  if (stripNullType(schema.type) === 'string' && ['ogc-bbox', 'geojson-geometry', 'geojson-feature', 'geojson-feature-collection'].indexOf(schema.format) !== -1) {
+    const f = stdFormObj(name, schema, options);
+    f.key  = options.path;
+    f.type = schema.format.replace('ogc', '').replace('geojson', '').replace('-', '');
+    options.lookup[stringify(options.path)] = f;
+    console.log(f);
     return f;
   }
 }
@@ -226,7 +239,7 @@ export function createDefaults() {
   // First sorted by schema type then a list.
   // Order has importance. First handler returning an form snippet will be used.
   return {
-    string:  [ select, text ],
+    string:  [ geotypes, select, text ],
     object:  [ fieldset ],
     number:  [ number ],
     integer: [ integer ],
